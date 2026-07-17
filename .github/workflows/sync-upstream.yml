@@ -1,0 +1,34 @@
+name: Scheduled Sync Upstream
+
+on:
+  schedule:
+    # 每天的 UTC 时间 0:00（北京时间早上 8 点）自动执行同步
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许你随时在 Actions 页面手动点击按钮触发同步
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 签出你自己的代码
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. 自动同步上游分支
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
+        with:
+          upstream_repository: basketikun/infinite-canvas
+          upstream_branch: main
+          target_branch: main
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          # 遇到冲突时，优先保留你自己的修改（防止你改过的环境变量或文件被冲掉）
+          test_mode: false
+
+      # 3. 如果同步成功，打印一条日志
+      - name: Sync Check
+        if: success()
+        run: echo "Upstream synced successfully!"
